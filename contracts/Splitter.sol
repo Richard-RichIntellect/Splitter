@@ -5,9 +5,7 @@ contract Splitter {
 
   mapping (address => mapping(address => uint256)) pendingWithdrawals;
 
-  event LogDetails(string location);
-  event LogDetailsAndValue(string location, uint256 value);
-  event LogDetailsAndAddress(string location, address value);
+  event LogDetailsOfSplit(address addressOfOwner,address addressOfReceiver, uint256 value);
 
   constructor () public payable {
     owner = msg.sender;
@@ -16,6 +14,7 @@ contract Splitter {
   function transferAmount(address addressOfAccount, uint256 amount) private  returns (bool)
   {
     pendingWithdrawals[owner][addressOfAccount] += amount;
+    emit LogDetailsOfSplit(owner,addressOfAccount,pendingWithdrawals[owner][addressOfAccount]);
     return true;
   }
 
@@ -46,8 +45,9 @@ contract Splitter {
   function reject(address rejectAddress) public {
     require(msg.sender == owner,"Cannot refund funds unless you are the owner.");
     uint amount = pendingWithdrawals[owner][rejectAddress];
- 
+    emit LogDetailsOfSplit(owner,rejectAddress,amount);
     pendingWithdrawals[owner][rejectAddress] = 0;
     owner.transfer(amount);
+
   }
 }
