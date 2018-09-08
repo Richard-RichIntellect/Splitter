@@ -15,14 +15,14 @@ contract('Splitter', function (accounts) {
     return Splitter.deployed()
       .then(_instance => {
         instance = _instance;
-        return instance.split(web3.eth.accounts[1], web3.eth.accounts[2], { from: web3.eth.accounts[0], value: web3.toWei('10', 'ether') })
+        return instance.transferAmount(web3.eth.accounts[1], web3.eth.accounts[2], { from: web3.eth.accounts[0], value: web3.toWei('10', 'ether') })
           .then(result => {
             transaction0 = result;
-            return instance.withdraw(web3.eth.accounts[1], { from: web3.eth.accounts[1] })
+            return instance.withdrawAmount(web3.toWei('5', 'ether'),{ from: web3.eth.accounts[1] })
           })
           .then(result => {
             transaction1 = result;
-            return instance.withdraw(web3.eth.accounts[2], { from: web3.eth.accounts[2] })
+            return instance.withdrawAmount(web3.toWei('5', 'ether'),{ from: web3.eth.accounts[2] })
           })
           .then(result => {
             transaction2 = result;
@@ -47,7 +47,7 @@ contract('Splitter', function (accounts) {
       });
   });
 
-  it("will return deposits not taken", function () {
+  /* it("will return deposits not taken", function () {
     let instance;
     let transaction0;
     let transaction1;
@@ -61,14 +61,14 @@ contract('Splitter', function (accounts) {
     return Splitter.deployed()
       .then(_instance => {
         instance = _instance;
-        return instance.split(web3.eth.accounts[1], web3.eth.accounts[2], { from: web3.eth.accounts[0], value: web3.toWei('10', 'ether') })
+        return instance.transferAmount(web3.eth.accounts[1], web3.eth.accounts[2], { from: web3.eth.accounts[0], value: web3.toWei('10', 'ether') })
           .then(result => {
             transaction0 = result;
-            return instance.withdraw(web3.eth.accounts[1], { from: web3.eth.accounts[1] })
+            return instance.withdraw({ from: web3.eth.accounts[1] })
           })
           .then(result => {
             transaction1 = result;
-            return instance.refund(web3.eth.accounts[2], { from: web3.eth.accounts[0] })
+            return instance.refund( { from: web3.eth.accounts[2] })
           })
           .then(result => {
             transaction2 = result;
@@ -93,5 +93,5 @@ contract('Splitter', function (accounts) {
 
           });
       });
-  });
+  }); */
 });

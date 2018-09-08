@@ -4,48 +4,67 @@ contract Splitter {
   address owner;
 
   mapping (address => uint256) pendingWithdrawals;
+  bool isStopped = false;
 
-  event LogDetailsOfSplit(address addressOfAccountOne,address addressOfAccountTwo, uint256 valueOfAccountOne,uint256 valueOfAccountTwo);
-  event LogDetailsOfRefundToOwner(address owner,address addressOfAccount, uint256 value);
+  event LogDetailsOfTransferAmount(uint256 amountSent,address accountOne,uint256 valueOne,address accountTwo,uint256 valueTwo,uint256 remainder);
   event LogDetailsofWithdrawal(address account, uint256 value);
+  event LogDetailsofEmergencyWithdrawal(address account, uint256 value);
 
   constructor () public payable {
     owner = msg.sender;
   }
-  
-  function split(address toAccountOne, address toAccountTwo) public payable returns (bool) {
 
-    require(msg.sender == owner,"Cannot split funds unless you are the owner.");
+  modifier onlyAuthorized {
+    require(owner == msg.sender,"Unauthorized");
+    _;
+  }
+
+  function stopContract() public onlyAuthorized {
+    isStopped = true;
+  }
+
+  function resumeContract() public onlyAuthorized {
+    isStopped = false;
+  }
+
+  modifier stoppedInEmergency {
+    require(!isStopped,"Contract Stopped.");
+    _;
+  }
+
+  modifier onlyWhenStopped {
+    require(isStopped,"Contract still active.");
+    _;
+  }
+
+  function transferAmount(address toAccountOne, address toAccountTwo) public stoppedInEmergency payable returns (bool) {
+
     require(msg.value >= 0,"Cannot split funds as you do not have any ether.");
     uint256 amountPerPerson = msg.value / 2;
     uint256 remainder = msg.value - (amountPerPerson * 2);
 
     pendingWithdrawals[toAccountOne] += amountPerPerson;
     pendingWithdrawals[toAccountTwo] += amountPerPerson;
-
-    emit LogDetailsOfSplit(toAccountOne,toAccountTwo,pendingWithdrawals[toAccountOne],pendingWithdrawals[toAccountTwo]);
-
+    
     if (remainder > 0)
     {
-      pendingWithdrawals[owner] += remainder;
+      pendingWithdrawals[msg.sender] += remainder;
     }
+
+    emit LogDetailsOfTransferAmount(msg.value, toAccountOne,pendingWithdrawals[toAccountOne],toAccountTwo,pendingWithdrawals[toAccountTwo],remainder);
+
     return true;
   }
 
-  function withdraw(address withdrawalAddress) public {
-    require (pendingWithdrawals[withdrawalAddress] > 0,"Cannot withdraw funds as none exist.");
-    uint amount = pendingWithdrawals[withdrawalAddress];
-    pendingWithdrawals[withdrawalAddress] = 0;
-    withdrawalAddress.transfer(amount);
-    emit LogDetailsofWithdrawal(withdrawalAddress,amount);
+  function withdrawAmount(uint256 amount) public stoppedInEmergency {
+    require (amount <= pendingWithdrawals[msg.sender],"Funds not available.");
+    pendingWithdrawals[msg.sender] = 0;
+    msg.sender.transfer(amount);
+    emit LogDetailsofWithdrawal(msg.sender,amount);
   }
 
-  function refund(address refundAddress) public {
-    require(msg.sender == owner,"Cannot refund funds unless you are the owner.");
-    require(pendingWithdrawals[refundAddress] > 0,"Cannot refund as no funds are available.");
-    uint amount = pendingWithdrawals[refundAddress];
-    emit LogDetailsOfRefundToOwner(owner,refundAddress,pendingWithdrawals[refundAddress]);
-    pendingWithdrawals[refundAddress] = 0;
-    owner.transfer(amount);
+  function emergencyWithdraw() public onlyWhenStopped onlyAuthorized {
+    msg.sender.transfer(address(this).balance);
+    emit LogDetailsofEmergencyWithdrawal(msg.sender,address(this).balance);
   }
 }
