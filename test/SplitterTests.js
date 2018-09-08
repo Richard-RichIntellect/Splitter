@@ -68,7 +68,7 @@ contract('Splitter', function (accounts) {
           })
           .then(result => {
             transaction1 = result;
-            return instance.reject(web3.eth.accounts[2], { from: web3.eth.accounts[0] })
+            return instance.refund(web3.eth.accounts[2], { from: web3.eth.accounts[0] })
           })
           .then(result => {
             transaction2 = result;

@@ -3,21 +3,16 @@ pragma solidity 0.4.24;
 contract Splitter {
   address owner;
 
-  mapping (address => mapping(address => uint256)) pendingWithdrawals;
+  mapping (address => uint256) pendingWithdrawals;
 
-  event LogDetailsOfSplit(address addressOfOwner,address addressOfReceiver, uint256 value);
+  event LogDetailsOfSplit(address addressOfAccountOne,address addressOfAccountTwo, uint256 valueOfAccountOne,uint256 valueOfAccountTwo);
+  event LogDetailsOfRefundToOwner(address owner,address addressOfAccount, uint256 value);
+  event LogDetailsofWithdrawal(address account, uint256 value);
 
   constructor () public payable {
     owner = msg.sender;
   }
   
-  function transferAmount(address addressOfAccount, uint256 amount) private  returns (bool)
-  {
-    pendingWithdrawals[owner][addressOfAccount] += amount;
-    emit LogDetailsOfSplit(owner,addressOfAccount,pendingWithdrawals[owner][addressOfAccount]);
-    return true;
-  }
-
   function split(address toAccountOne, address toAccountTwo) public payable returns (bool) {
 
     require(msg.sender == owner,"Cannot split funds unless you are the owner.");
@@ -25,29 +20,32 @@ contract Splitter {
     uint256 amountPerPerson = msg.value / 2;
     uint256 remainder = msg.value - (amountPerPerson * 2);
 
-    require(transferAmount(toAccountOne,amountPerPerson),"Transfer failed");
-    require(transferAmount(toAccountTwo,amountPerPerson),"Transfer failed");
+    pendingWithdrawals[toAccountOne] += amountPerPerson;
+    pendingWithdrawals[toAccountTwo] += amountPerPerson;
+
+    emit LogDetailsOfSplit(toAccountOne,toAccountTwo,pendingWithdrawals[toAccountOne],pendingWithdrawals[toAccountTwo]);
 
     if (remainder > 0)
     {
-      require(transferAmount(msg.sender,remainder),"Transfer failed");
+      pendingWithdrawals[owner] += remainder;
     }
     return true;
   }
 
   function withdraw(address withdrawalAddress) public {
-    uint amount = pendingWithdrawals[owner][withdrawalAddress];
-
-    pendingWithdrawals[owner][withdrawalAddress] = 0;
+    require (pendingWithdrawals[withdrawalAddress] > 0,"Cannot withdraw funds as none exist.");
+    uint amount = pendingWithdrawals[withdrawalAddress];
+    pendingWithdrawals[withdrawalAddress] = 0;
     withdrawalAddress.transfer(amount);
+    emit LogDetailsofWithdrawal(withdrawalAddress,amount);
   }
 
-  function reject(address rejectAddress) public {
+  function refund(address refundAddress) public {
     require(msg.sender == owner,"Cannot refund funds unless you are the owner.");
-    uint amount = pendingWithdrawals[owner][rejectAddress];
-    emit LogDetailsOfSplit(owner,rejectAddress,amount);
-    pendingWithdrawals[owner][rejectAddress] = 0;
+    require(pendingWithdrawals[refundAddress] > 0,"Cannot refund as no funds are available.");
+    uint amount = pendingWithdrawals[refundAddress];
+    emit LogDetailsOfRefundToOwner(owner,refundAddress,pendingWithdrawals[refundAddress]);
+    pendingWithdrawals[refundAddress] = 0;
     owner.transfer(amount);
-
   }
 }
