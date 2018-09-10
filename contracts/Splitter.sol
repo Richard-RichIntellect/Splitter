@@ -10,7 +10,7 @@ contract Splitter is Pausable {
   event LogDetailsofWithdrawal(address account, uint256 value);
   event LogDetailsofEmergencyWithdrawal(address account);
 
-  constructor () public Pausable(msg.sender) payable {  }
+  constructor () public {  }
 
   function transferAmount(address toAccountOne, address toAccountTwo) public onlyIfRunning payable returns (bool) {
 
@@ -37,7 +37,7 @@ contract Splitter is Pausable {
     msg.sender.transfer(amount);
   }
 
-  function emergencyWithdraw() public onlyWhenStopped onlyAuthorized {
+  function emergencyWithdraw() public onlyWhenStopped onlyOwner {
     emit LogDetailsofEmergencyWithdrawal(msg.sender);
     msg.sender.transfer(address(this).balance);
   }

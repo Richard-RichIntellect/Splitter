@@ -1,23 +1,24 @@
 pragma solidity 0.4.24;
 
-contract Pausable {
+import "./Owned.sol";
+
+contract Pausable is Owned {
   bool isStopped = false;
-  address authorizer;
+  
+  event LogContractStopped(address account);
+  event LogContractResumed(address account);
 
-  constructor (address ownerAddress) public payable {
-    authorizer = ownerAddress;
+  constructor () public  {
   }
 
-  modifier onlyAuthorized {
-    require(authorizer == msg.sender,"Unauthorized");
-    _;
-  }
 
-  function stopContract() public onlyAuthorized {
+  function stopContract() public onlyOwner {
+    emit LogContractStopped(msg.sender);
     isStopped = true;
   }
 
-  function resumeContract() public onlyAuthorized {
+  function resumeContract() public onlyOwner {
+    emit LogContractResumed(msg.sender);
     isStopped = false;
   }
 
