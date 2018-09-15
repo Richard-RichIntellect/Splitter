@@ -2,9 +2,9 @@ var Splitter = artifacts.require("../contracts/Splitter.sol");
 
 contract('Splitter', function (accounts) {
   let instance;
-  let owner = accounts[0];
-  let recepientOne = accounts[1]
-  let recepientTwo = accounts[2]
+  const owner = accounts[0];
+  const recepientOne = accounts[1]
+  const recepientTwo = accounts[2]
 
   beforeEach(function () {
     return Splitter.new({from:owner})
@@ -16,31 +16,45 @@ contract('Splitter', function (accounts) {
   it("should split funds between accounts", function () {
 
     let ownerTransaction;
-    let recipientTransaction;
+    let recipientTransactionOne;
     let recipientTransactionTwo;
 
-    let balance0 = web3.eth.getBalance(owner);
-    let balance1 = web3.eth.getBalance(recepientOne);
-    let balance2 = web3.eth.getBalance(recepientTwo);
+    let balanceOwnerBalance;
+    let recepientOneBalance;
+    let recepientTwoBalance;
+
+    return new Promise(function (fulfilled, rejected) {
+
+      try {
+        balanceOwnerBalance = web3.eth.getBalance(owner);
+        recepientOneBalance = web3.eth.getBalance(recepientOne);
+        recepientTwoBalance = web3.eth.getBalance(recepientTwo);
+        fulfilled(true);
+      } catch (error)
+      {
+        console.log(error);
+        rejected(false);
+      }
+    }).then (result => {
 
     // You *need to return* the whole Promise chain
 
-    return instance.transferAmount(recepientOne, recepientTwo, { from: owner, value: web3.toWei('10', 'ether') })
+    return instance.transferAmount(recepientOne, recepientTwo, { from: owner, value: web3.toWei('0.1', 'ether') })})
       .then(result => {
         console.log(web3.eth.getBalance(instance.address).toNumber());
         ownerTransaction = result;
-        return instance.withdrawAmount(web3.toWei('5', 'ether'), { from: recepientOne })
+        return instance.withdrawAmount(web3.toWei('0.05', 'ether'), { from: recepientOne })
       })
       .then(result => {
         recipientTransactionOne = result;
-        return instance.withdrawAmount(web3.toWei('5', 'ether'), { from: recepientTwo })
+        return instance.withdrawAmount(web3.toWei('0.05', 'ether'), { from: recepientTwo })
       })
       .then(result => {
         recipientTransactionTwo = result;
 
-        let ownerCurrentBalance = (balance0.minus(web3.toWei(10, 'ether'))).toNumber();
-        let recipientCurrentBalanceOne = (balance1.plus(web3.toWei(5, 'ether'))).toNumber();
-        let recipientCurrentBalanceTwo = (balance2.plus(web3.toWei(5, 'ether'))).toNumber();
+        let ownerCurrentBalance = (balanceOwnerBalance.minus(web3.toWei(0.1, 'ether'))).toNumber();
+        let recipientCurrentBalanceOne = (recepientOneBalance.plus(web3.toWei(0.05, 'ether'))).toNumber();
+        let recipientCurrentBalanceTwo = (recepientTwoBalance.plus(web3.toWei(0.05, 'ether'))).toNumber();
 
         let tx0 = web3.eth.getTransaction(ownerTransaction.tx);
         let tx1 = web3.eth.getTransaction(recipientTransactionOne.tx);
@@ -60,14 +74,14 @@ contract('Splitter', function (accounts) {
 
   it("will try to withdraw 10 ether when 5 is avaiable", function () {
 
-    return instance.transferAmount(recepientOne, recepientTwo, { from: owner, value: web3.toWei('10', 'ether') })
+    return instance.transferAmount(recepientOne, recepientTwo, { from: owner, value: web3.toWei('0.1', 'ether') })
       .then(result => {
         ownerTransaction = result;
-        return instance.withdrawAmount(web3.toWei('5', 'ether'),{ from: recepientOne })
+        return instance.withdrawAmount(web3.toWei('0.05', 'ether'),{ from: recepientOne })
       })
       .then(result => {
         recipientTransactionOne = result;
-        return instance.withdrawAmount(web3.toWei('5', 'ether'), { from: recepientOne })
+        return instance.withdrawAmount(web3.toWei('0.05', 'ether'), { from: recepientOne })
       })
       .then (result => {
         assert.isTrue(false);
@@ -79,25 +93,24 @@ contract('Splitter', function (accounts) {
 
   it("Will successfully withdraw ether", function () {
 
-    return instance.transferAmount(recepientOne, recepientTwo, { from: owner, value: web3.toWei('10', 'ether') })
+    return instance.transferAmount(recepientOne, recepientTwo, { from: owner, value: web3.toWei('0.1', 'ether') })
       .then(result => {
         console.log(web3.eth.getBalance(owner).toNumber());
         ownerTransaction = result;
-        return instance.withdrawAmount(web3.toWei('2', 'ether'),{ from: recepientOne })
+        return instance.withdrawAmount(web3.toWei('0.02', 'ether'),{ from: recepientOne })
       })
       .then(result => {
         recipientTransactionOne = result;
-        return instance.withdrawAmount(web3.toWei('1', 'ether'), { from: recepientOne })
+        return instance.withdrawAmount(web3.toWei('0.01', 'ether'), { from: recepientOne })
       })
       .then(result => {
         recipientTransactionOne = result;
-        return instance.withdrawAmount(web3.toWei('2', 'ether'), { from: recepientOne })
+        return instance.withdrawAmount(web3.toWei('0.02', 'ether'), { from: recepientOne })
       })
       .then (result => {
         assert.isTrue(true);
       })
       .catch(result => {
-        console.log(result);
         assert.isTrue(false);
       });
   });
@@ -133,16 +146,13 @@ contract('Splitter', function (accounts) {
       })
       .then (result => {
         assert.isTrue(true);
-      })
-      .catch(result => {
-        console.log(result);
-        assert.isTrue(false);
       });
+      
   });
 
   it("should fail when trying to withdraw when you are not the owner.", function () {
 
-    return instance.transferAmount(recepientOne, recepientTwo, { from: owner, value: web3.toWei('10', 'ether') })
+    return instance.transferAmount(recepientOne, recepientTwo, { from: owner, value: web3.toWei('0.1', 'ether') })
       .then(result => {
         console.log(web3.eth.getBalance(owner).toNumber());
         ownerTransaction = result;
@@ -155,10 +165,8 @@ contract('Splitter', function (accounts) {
       .then(result => {
         assert.isTrue(false);
       })
-      .catch(result => {
-        console.log(result);
-        assert.isTrue(true);
-      });
+      .catch(result => assert.isTrue(true));
+      ;
   });
 
 });

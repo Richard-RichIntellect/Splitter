@@ -13,11 +13,11 @@ contract Owned {
     _;
   }
   
-  event LogOwnerChanged(address newOwner);
+  event LogOwnerChanged(address newOwner, address currentOwner);
 
   function changeOwner(address newOwner) public onlyOwner
   {
-    emit LogOwnerChanged(newOwner);
+    emit LogOwnerChanged(newOwner, msg.sender);
     owner = newOwner;
   }
 
